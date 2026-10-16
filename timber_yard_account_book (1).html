@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timber Yard Account Book</title>
+<style>
+:root{--green:#214b38;--green2:#2f6b4d;--pale:#edf4ef;--ink:#1d2922;--muted:#65736a;--line:#dce5de;--bg:#f5f7f5;--amber:#9a5b08}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:var(--green);color:#fff;padding:22px max(18px,calc((100vw - 1120px)/2));}
+header h1{margin:0;font-size:1.55rem}header p{margin:5px 0 0;color:#d8e7dc}
+main{max-width:1120px;margin:22px auto;padding:0 16px 40px}.notice{background:#fff8e8;border:1px solid #f1d69d;color:#68460b;padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:.92rem}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:16px}.stat span{display:block;color:var(--muted);font-size:.83rem}.stat strong{display:block;font-size:1.55rem;margin-top:4px}
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;align-items:start}.panel h2{margin:0 0 14px;font-size:1.15rem}.field{display:grid;gap:5px;margin:12px 0}.field label{font-size:.9rem;font-weight:650}.field input,.field select{width:100%;border:1px solid #cbd7ce;border-radius:8px;padding:10px 11px;font:inherit;background:white;color:var(--ink)}button,.button{border:0;border-radius:9px;padding:10px 13px;font:inherit;font-weight:650;cursor:pointer;background:var(--green2);color:white}button:hover,.button:hover{filter:brightness(.95)}button.secondary{background:white;color:var(--green);border:1px solid #b9cbbf}button.danger{background:#fff0ef;color:#9a2822;border:1px solid #efc5c2}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.full{width:100%}.subtle{font-size:.85rem;color:var(--muted)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tabs button.active{background:var(--green);color:#fff}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px}.toolbar .field{flex:1;min-width:150px;margin:0}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;background:white;min-width:690px}th,td{text-align:left;padding:10px 11px;border-bottom:1px solid #e8eee9;vertical-align:top}th{font-size:.82rem;color:#526258;background:#f4f7f4;white-space:nowrap}td{font-size:.92rem}td.money,th.money{text-align:right;white-space:nowrap}.empty{text-align:center;color:var(--muted);padding:25px}.customerlist{display:grid;gap:7px;margin-top:10px}.customer{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:10px 11px;cursor:pointer}.customer.selected{border-color:var(--green2);background:var(--pale)}.customer small{display:block;color:var(--muted)}.customer strong{white-space:nowrap}.pill{font-size:.76rem;background:var(--pale);color:var(--green);padding:3px 7px;border-radius:99px}.hidden{display:none!important}.monthtotal{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0}.monthtotal strong{font-size:1.3rem;color:var(--green)}.footer{margin-top:14px;color:var(--muted);font-size:.82rem}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}main{margin-top:14px}header{padding:18px}header h1{font-size:1.35rem}}
+@media print{body{background:white}header,.notice,.no-print,#entryPanel,#customerPanel,.stats{display:none!important}main{max-width:none;margin:0;padding:0}.layout{display:block}.panel{border:0;padding:0}.tablewrap{overflow:visible;border:0}table{min-width:0;font-size:10pt}th,td{padding:6px}.footer{display:none}}
+</style>
+</head>
+<body>
+<header><h1>🪵 Timber Yard Account Book</h1><p>Customer goods taken · Monthly account records</p></header>
+<main>
+<div class="notice"><strong>Saving note:</strong> This version automatically saves on this device and browser. Export Excel backups regularly. It does not sync between different devices yet.</div>
+<section class="stats">
+  <div class="stat"><span>Customer accounts</span><strong id="customerCount">0</strong></div>
+  <div class="stat"><span>Entries this month</span><strong id="entryCount">0</strong></div>
+  <div class="stat"><span>Value recorded this month</span><strong id="monthValue">£0.00</strong></div>
+</section>
+<div class="layout">
+  <div>
+    <section class="panel" id="customerPanel">
+      <h2>Customer accounts</h2>
+      <form id="customerForm">
+        <div class="field"><label for="customerName">Customer / company name *</label><input id="customerName" required maxlength="120" placeholder="e.g. ABC Builders"></div>
+        <div class="field"><label for="customerContact">Contact / phone (optional)</label><input id="customerContact" maxlength="120" placeholder="Phone or contact name"></div>
+        <button class="full" type="submit">+ Add customer</button>
+      </form>
+      <div class="field"><label for="customerSearch">Find customer</label><input id="customerSearch" placeholder="Search accounts..."></div>
+      <div id="customerList" class="customerlist"></div>
+      <p class="subtle">Select a customer to view their account and record goods taken.</p>
+    </section>
+    <section class="panel" id="entryPanel" style="margin-top:16px">
+      <h2>Record goods taken</h2>
+      <p class="subtle" id="entryCustomerHint">Choose or add a customer first.</p>
+      <form id="entryForm">
+        <div class="field"><label for="entryDate">Date taken *</label><input type="date" id="entryDate" required></div>
+        <div class="field"><label for="entryItem">Item taken *</label><input id="entryItem" required maxlength="200" placeholder="e.g. 20 lengths of 4x2 timber"></div>
+        <div class="field"><label for="entryRef">Reference / ticket number *</label><input id="entryRef" required maxlength="100" placeholder="e.g. DN1048"></div>
+        <div class="field"><label for="entryTaker">Who took it? *</label><input id="entryTaker" required maxlength="120" placeholder="e.g. John Smith"></div>
+        <div class="field"><label for="entryPrice">Total price (£) *</label><input id="entryPrice" type="number" min="0.01" step="0.01" required placeholder="0.00"></div>
+        <button class="full" type="submit">Add to customer account</button>
+      </form>
+    </section>
+  </div>
+  <div>
+    <section class="panel">
+      <div class="tabs no-print">
+        <button class="active" data-tab="accountTab">Customer account</button>
+        <button class="secondary" data-tab="allTab">All transactions</button>
+        <button class="secondary" data-tab="backupTab">Excel & backup</button>
+      </div>
+      <div id="accountTab">
+        <h2 id="accountTitle">Select a customer</h2>
+        <div class="toolbar no-print">
+          <div class="field"><label for="accountMonth">Statement month</label><input type="month" id="accountMonth"></div>
+          <button id="printStatement" class="secondary" type="button">Print statement</button>
+        </div>
+        <div class="monthtotal"><span>Monthly amount due</span><strong id="accountTotal">£0.00</strong></div>
+        <div class="tablewrap"><table><thead><tr><th>Date</th><th>Item taken</th><th>Reference</th><th>Who took it</th><th class="money">Price</th><th class="no-print">Action</th></tr></thead><tbody id="accountRows"></tbody></table></div>
+      </div>
+      <div id="allTab" class="hidden">
+        <h2>All transactions</h2>
+        <div class="toolbar no-print"><div class="field"><label for="allMonth">Month</label><input type="month" id="allMonth"></div><div class="field"><label for="allCustomer">Customer</label><select id="allCustomer"><option value="">All customers</option></select></div></div>
+        <div class="tablewrap"><table><thead><tr><th>Date</th><th>Customer</th><th>Item</th><th>Reference</th><th>Who took it</th><th class="money">Price</th></tr></thead><tbody id="allRows"></tbody></table></div>
+      </div>
+      <div id="backupTab" class="hidden">
+        <h2>Excel & backup</h2>
+        <p>Download your records as an Excel workbook (.xlsx) with separate sheets for customer accounts and all transactions. If Excel export isn't available offline, you can download a CSV that opens in Excel.</p>
+        <div class="actions"><button id="exportExcel" type="button">Download Excel (.xlsx)</button><button id="exportCsv" class="secondary" type="button">Download CSV</button></div>
+        <div class="actions"><button id="backupJson" class="secondary" type="button">Download full backup</button><label class="button secondary" for="restoreFile">Restore backup</label><input id="restoreFile" type="file" accept=".json,application/json" class="hidden"></div>
+        <p class="subtle">Full backup includes customer records and all transactions. Keep backups somewhere safe. Restoring a backup replaces the records currently in this browser.</p>
+        <div class="notice" style="margin-top:14px"><strong>Important:</strong> browser storage is local to this device/browser. For a shared system across multiple staff or computers, a secure online database would need to be added.</div>
+        <p id="exportStatus" class="subtle" role="status"></p>
+      </div>
+    </section>
+  </div>
+</div>
+<p class="footer">Tip: enter the total charge for each ticket. Each customer's monthly total is calculated from the entries dated in that month.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(() => {
+ const STORE='timberYardAccountBook_v1';
+ const $=id=>document.getElementById(id);
+ const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+ const thisMonth=localDate.slice(0,7);
+ $('entryDate').value=localDate; $('accountMonth').value=thisMonth; $('allMonth').value=thisMonth;
+ let data={customers:[],entries:[]}; let selectedId=null;
+ try { const saved=localStorage.getItem(STORE); if(saved){const parsed=JSON.parse(saved);if(parsed&&Array.isArray(parsed.customers)&&Array.isArray(parsed.entries))data=parsed;} } catch(e){}
+ const money=n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(Number(n)||0);
+ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const customer=id=>data.customers.find(c=>c.id===id);
+ const selected=()=>customer(selectedId);
+ const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(data));}catch(e){alert('Could not save to this browser. Export a backup and free up browser storage.');}};
+ const monthEntries=(month, customerId=null)=>data.entries.filter(e=>e.date.startsWith(month)&&(customerId===null||e.customerId===customerId));
+ const total=arr=>arr.reduce((s,e)=>s+Number(e.price||0),0);
+ function render(){
+   $('customerCount').textContent=data.customers.length;
+   $('entryCount').textContent=monthEntries(thisMonth).length;
+   $('monthValue').textContent=money(total(monthEntries(thisMonth)));
+   const q=$('customerSearch').value.toLowerCase();
+   const filtered=data.customers.filter(c=>c.name.toLowerCase().includes(q)||(c.contact||'').toLowerCase().includes(q));
+   $('customerList').innerHTML=filtered.length?filtered.map(c=>{
+     const sum=total(data.entries.filter(e=>e.customerId===c.id));
+     return `<div class="customer ${c.id===selectedId?'selected':''}" data-customer="${c.id}"><div><b>${escapeHtml(c.name)}</b><small>${escapeHtml(c.contact||'No contact details')}</small></div><div style="text-align:right"><strong>${money(sum)}</strong><small>all recorded charges</small></div></div>`;
+   }).join(''):'<div class="empty">No customers yet. Add your first customer above.</div>';
+   document.querySelectorAll('[data-customer]').forEach(el=>el.addEventListener('click',()=>{selectedId=el.dataset.customer;render();}));
+   const c=selected();
+   $('entryCustomerHint').textContent=c?'New entry will be added to '+c.name+'.':'Choose or add a customer first.';
+   $('accountTitle').textContent=c?c.name+' — monthly account':'Select a customer';
+   const arr=c?monthEntries($('accountMonth').value,c.id).sort((a,b)=>a.date.localeCompare(b.date)): [];
+   $('accountTotal').textContent=money(total(arr));
+   $('accountRows').innerHTML=arr.length?arr.map(e=>`<tr><td>${escapeHtml(e.date)}</td><td>${escapeHtml(e.item)}</td><td>${escapeHtml(e.ref)}</td><td>${escapeHtml(e.taker)}</td><td class="money">${money(e.price)}</td><td class="no-print"><button class="danger" data-delete="${e.id}" type="button">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No entries for this customer and month.</td></tr>';
+   document.querySelectorAll('[data-delete]').forEach(el=>el.addEventListener('click',()=>{const e=data.entries.find(x=>x.id===el.dataset.delete);if(e&&confirm(`Delete this entry (${e.item}, ${money(e.price)})?`)){data.entries=data.entries.filter(x=>x.id!==e.id);save();render();}}));
+   const all=monthEntries($('allMonth').value).filter(e=>!$('allCustomer').value||e.customerId===$('allCustomer').value).sort((a,b)=>b.date.localeCompare(a.date));
+   $('allRows').innerHTML=all.length?all.map(e=>`<tr><td>${escapeHtml(e.date)}</td><td>${escapeHtml(customer(e.customerId)?.name||'Unknown')}</td><td>${escapeHtml(e.item)}</td><td>${escapeHtml(e.ref)}</td><td>${escapeHtml(e.taker)}</td><td class="money">${money(e.price)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">No transactions for this filter.</td></tr>';
+   $('allCustomer').innerHTML='<option value="">All customers</option>'+data.customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+ }
+ $('customerForm').addEventListener('submit',e=>{e.preventDefault();const name=$('customerName').value.trim();if(!name)return;const c={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,contact:$('customerContact').value.trim(),createdAt:new Date().toISOString()};data.customers.push(c);selectedId=c.id;$('customerForm').reset();save();render();});
+ $('entryForm').addEventListener('submit',e=>{e.preventDefault();const c=selected();if(!c){alert('Please add or select a customer first.');return;}const price=Number($('entryPrice').value);if(!Number.isFinite(price)||price<=0){alert('Enter a price greater than £0.');return;}data.entries.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),customerId:c.id,date:$('entryDate').value,item:$('entryItem').value.trim(),ref:$('entryRef').value.trim(),taker:$('entryTaker').value.trim(),price:Math.round(price*100)/100,createdAt:new Date().toISOString()});$('entryItem').value='';$('entryRef').value='';$('entryTaker').value='';$('entryPrice').value='';save();render();});
+ $('customerSearch').addEventListener('input',render);
+ ['accountMonth','allMonth','allCustomer'].forEach(id=>$(id).addEventListener('change',render));
+ document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b===btn);b.classList.toggle('secondary',b!==btn);});['accountTab','allTab','backupTab'].forEach(id=>$(id).classList.toggle('hidden',id!==btn.dataset.tab));}));
+ $('printStatement').addEventListener('click',()=>{if(!selected()){alert('Select a customer first.');return;}window.print();});
+ function workbookRows(){
+   const customers=[['Customer','Contact','Total recorded charges'],...data.customers.map(c=>[c.name,c.contact||'',Number(total(data.entries.filter(e=>e.customerId===c.id)).toFixed(2))])];
+   const transactions=[['Date','Customer','Item taken','Reference','Who took it','Price (£)'],...data.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e=>[e.date,customer(e.customerId)?.name||'Unknown',e.item,e.ref,e.taker,Number(Number(e.price).toFixed(2))])];
+   const monthly=[['Month','Customer','Number of entries','Total due (£)']];
+   const buckets={};data.entries.forEach(e=>{const k=e.date.slice(0,7)+'|'+e.customerId;(buckets[k]??=[]).push(e);});
+   Object.entries(buckets).sort().forEach(([k,arr])=>{const [m,cid]=k.split('|');monthly.push([m,customer(cid)?.name||'Unknown',arr.length,Number(total(arr).toFixed(2))]);});
+   return {customers,transactions,monthly};
+ }
+ $('exportExcel').addEventListener('click',()=>{
+   const status=$('exportStatus');
+   if(window.XLSX){const rows=workbookRows(),wb=XLSX.utils.book_new();Object.entries(rows).forEach(([name,values])=>{const ws=XLSX.utils.aoa_to_sheet(values);XLSX.utils.book_append_sheet(wb,ws,{customers:'Customers',transactions:'Transactions',monthly:'Monthly Totals'}[name]);});XLSX.writeFile(wb,'timber-yard-accounts.xlsx');status.textContent='Excel workbook downloaded.';}
+   else {downloadCsv();status.textContent='Excel library is unavailable offline, so a CSV file was downloaded instead. CSV opens in Excel.';}
+ });
+ function downloadCsv(){const rows=[['Date','Customer','Item taken','Reference','Who took it','Price (£)'],...data.entries.map(e=>[e.date,customer(e.customerId)?.name||'Unknown',e.item,e.ref,e.taker,Number(e.price).toFixed(2)])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');downloadBlob('\ufeff'+csv,'timber-yard-transactions.csv','text/csv;charset=utf-8;');}
+ $('exportCsv').addEventListener('click',downloadCsv);
+ $('backupJson').addEventListener('click',()=>downloadBlob(JSON.stringify(data,null,2),'timber-yard-backup.json','application/json'));
+ $('restoreFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.customers)||!Array.isArray(parsed.entries))throw new Error('Invalid backup');if(confirm('Restore this backup? This replaces the current records in this browser.')){data=parsed;selectedId=data.customers[0]?.id||null;save();render();$('exportStatus').textContent='Backup restored.';}}catch(err){alert('Could not restore this file. Please choose a backup JSON created by this app.');}e.target.value='';});
+ function downloadBlob(content,name,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+ render();
+})();
+</script>
+</body>
+</html>
